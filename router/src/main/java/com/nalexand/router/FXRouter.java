@@ -16,8 +16,8 @@ public class FXRouter {
 
     public static void main(String[] args) {
         List<Thread> threads = new ArrayList<>();
-        threads.add(createRouting(market, broker));
-        threads.add(createRouting(broker, market));
+        threads.add(market.createConnection(broker::sendMessage));
+        threads.add(broker.createConnection(market::sendMessage));
         threads.forEach(thread -> {
                     try {
                         thread.join();
@@ -26,35 +26,6 @@ public class FXRouter {
                     }
                 }
         );
-    }
-
-    private static Thread createRouting(
-            SocketDelegate receiver,
-            SocketDelegate dispatcher
-    ) {
-        Thread thread = new Thread(() -> {
-            try {
-                Socket receiverSocket = receiver.waitConnection();
-
-                InputStream inputStream = receiverSocket.getInputStream();
-                OutputStream outputStream = null;
-
-                while (true) {
-                    byte[] bytes = new byte[64];
-                    int readCount = inputStream.read(bytes);
-                    if (outputStream == null) {
-                        outputStream = dispatcher.getOutputStream();
-                    }
-                    System.out.printf("%d: read %d bytes\n", receiverSocket.getLocalPort(), readCount);
-
-                    outputStream.write(bytes);
-                }
-            } catch (IOException e) {
-                handleError(e);
-            }
-        });
-        thread.start();
-        return thread;
     }
 
     public static void handleError(Exception e) {
