@@ -9,12 +9,14 @@
         <module name="market" />
         <module name="router" />
         <module name="broker" />
+        <module name="utils" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel target="8">
-      <module name="broker" target="1.5" />
+      <module name="broker" target="1.8" />
       <module name="market" target="1.8" />
       <module name="router" target="1.8" />
+      <module name="utils" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>
