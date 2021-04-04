@@ -32,22 +32,22 @@ public class SocketDelegate {
 
     public Thread createConnection(Consumer<byte[]> onMessageReceived) {
         Thread thread = new Thread(() -> {
-            try {
-                waitConnection();
+            while (true) {
+                try {
+                    waitConnection();
 
-                InputStream inputStream = socket.getInputStream();
+                    InputStream inputStream = socket.getInputStream();
 
-                while (true) {
                     byte[] bytes = new byte[64];
-                    int readCount = inputStream.read(bytes);
-
-                    System.out.printf("%d: read %d bytes\n", port, readCount);
-                    if (readCount > 0) {
+                    int readCount;
+                    while ((readCount = inputStream.read(bytes)) > 0) {
+                        System.out.printf("%d: read %d bytes\n", port, readCount);
                         onMessageReceived.accept(bytes);
                     }
+                    System.out.printf("%d: drop connection\n", port);
+                } catch (IOException e) {
+                    FXRouter.handleError(e);
                 }
-            } catch (IOException e) {
-                FXRouter.handleError(e);
             }
         });
         thread.start();

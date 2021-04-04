@@ -7,7 +7,9 @@ import java.util.Scanner;
 public class FXBroker {
 
     public static void main(String[] args) {
-        SocketClient client = new SocketClient("il-b4.msk.21-school.ru", 5001, "BROKER");
+        SocketClient client = new SocketClient("macbook-atalkhin.local", 5001, "BROKER");
+        client.setOnMessageReceivedListener(bytes -> System.out.println(new String(bytes)));
+
         Scanner scanner = new Scanner(System.in);
         String line = null;
         do {
