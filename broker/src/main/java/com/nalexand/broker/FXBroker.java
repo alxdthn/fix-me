@@ -7,15 +7,20 @@ import java.util.Scanner;
 public class FXBroker {
 
     public static void main(String[] args) {
-        SocketClient client = new SocketClient("macbook-atalkhin.local", 5001, "BROKER");
-        client.setOnMessageReceivedListener(bytes -> System.out.println(new String(bytes)));
+        SocketClient client = new SocketClient(5001, "BROKER");
 
         Scanner scanner = new Scanner(System.in);
         String line = null;
         do {
             try {
                 line = scanner.nextLine();
-                client.sendMessage(line);
+                client.sendMessage(
+                        line,
+                        result -> {
+                        },
+                        error -> {
+                        }
+                );
             } catch (IllegalStateException e) {
                 e.printStackTrace();
                 System.exit(1);

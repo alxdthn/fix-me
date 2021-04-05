@@ -22,11 +22,14 @@ public class SocketDelegate {
         serverSocket = openSocket(port);
     }
 
+    public boolean isConnected() {
+        return socket != null && socket.isConnected();
+    }
+
     public void sendMessage(byte[] message) {
         try {
             getOutputStream().write(message);
         } catch (IOException e) {
-            FXRouter.handleError(e);
         }
     }
 

@@ -3,108 +3,95 @@ package com.nalexand.fx_utils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 public class SocketClient {
 
-    public static final int CONNECTION_RETRY_TIMEOUT = 3000;
-
-    private int port;
+    private final int port;
 
     private String host;
 
-    private Socket socket;
-
     private final String logName;
 
-    private OutputStream outputStream = null;
+    private Socket socket = null;
 
-    private Consumer<byte[]> onMessageReceived = null;
+    private final ExecutorService executorService = Executors.newFixedThreadPool(1);
 
-    private Thread socketThread = null;
-
-    public SocketClient(String host, int port, String logName) {
+    public SocketClient(int port, String logName) {
         this.logName = logName;
         this.port = port;
-        this.host = host;
-        Thread clientThread = new Thread(() -> {
-            logMessage(String.format("Create client %s:%d", host, port));
-            while (true) {
-                if (socketThread != null) {
-                    socketThread.interrupt();
+        try {
+            this.host = InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+        logMessage(String.format("Create client %s:%d", host, port));
+    }
+
+    public void sendMessage(
+            String message,
+            Consumer<String> resultHandler,
+            Consumer<Throwable> errorHandler
+    ) {
+        executorService.execute(
+                () -> {
+                    logMessage("Execute new message on thread: " + Thread.currentThread().getName());
+                    try {
+                        if (socket == null || !socket.isConnected()) {
+                            logMessage(String.format("Create connection with port %d", port));
+                            socket = new Socket(host, port);
+                        }
+
+                        logMessage(String.format("Write message %s", message));
+                        OutputStream outputStream = socket.getOutputStream();
+                        outputStream.write(message.getBytes());
+
+                        logMessage("Wait answer");
+                        InputStream inputStream = socket.getInputStream();
+                        byte[] bytes = new byte[64];
+                        if (inputStream.read(bytes) < 0) {
+                            throw new IOException("No connection");
+                        } else {
+                            String answer = new String(bytes);
+                            logMessage(String.format("Answer is %s", answer));
+                            resultHandler.accept(answer);
+                        }
+                    } catch (IOException e) {
+                        closeConnection();
+                        notifyErrorHandler(errorHandler, e);
+                    }
                 }
-                tryCreateSocket();
-                runSocketThread();
-            }
-        });
-        clientThread.start();
+        );
     }
 
-    private void tryCreateSocket() {
-        while (true) {
+    private void closeConnection() {
+        if (socket != null) {
             try {
-                socket = new Socket(host, port);
-                return;
-            } catch (IOException e) {
-                logMessage(String.format("Retry connection to %d port", port));
-                trySleep();
+                socket.close();
+            } catch (IOException ignored) {
             }
         }
+        socket = null;
     }
 
-    public void sendMessage(String message) {
-        if (message == null) return;
-        try {
-            if (outputStream == null) {
-                outputStream = socket.getOutputStream();
-            }
-            outputStream.write(message.getBytes());
-        } catch (IOException ignored) { }
-    }
-
-    private void readInput() {
-        try {
-            InputStream inputStream = socket.getInputStream();
-            byte[] bytes = new byte[64];
-
-            while (inputStream.read(bytes) > 0) {
-                onMessageReceived.accept(bytes);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void runSocketThread() {
-        socketThread = new Thread(() -> {
-            logMessage(String.format("Connected to %d port", port));
-            readInput();
-        });
-        socketThread.start();
-        try {
-            socketThread.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+    private void notifyErrorHandler(Consumer<Throwable> errorHandler, Throwable error) {
+        error.printStackTrace();
+        logMessage(String.format("Error: %s", error.getMessage()));
+        if (errorHandler != null) {
+            errorHandler.accept(error);
         }
     }
 
     private void logMessage(String message) {
         if (logName != null) {
             System.out.printf("%s: %s\n", logName, message);
-        }
-    }
-
-    public void setOnMessageReceivedListener(Consumer<byte[]> onMessageReceived) {
-        this.onMessageReceived = onMessageReceived;
-    }
-
-    private void trySleep() {
-        try {
-            Thread.sleep(CONNECTION_RETRY_TIMEOUT);
-        } catch (InterruptedException interruptedException) {
-            interruptedException.printStackTrace();
-            System.exit(1);
         }
     }
 }

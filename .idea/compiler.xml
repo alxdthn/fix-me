@@ -9,11 +9,13 @@
         <module name="market" />
         <module name="router" />
         <module name="broker" />
+        <module name="fix-me" />
         <module name="utils" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel target="8">
       <module name="broker" target="1.8" />
+      <module name="fix-me" target="1.8" />
       <module name="market" target="1.8" />
       <module name="router" target="1.8" />
       <module name="utils" target="1.8" />

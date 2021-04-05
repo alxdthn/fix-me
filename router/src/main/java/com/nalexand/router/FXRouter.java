@@ -12,8 +12,20 @@ public class FXRouter {
 
     public static void main(String[] args) {
         List<Thread> threads = new ArrayList<>();
-        threads.add(market.createConnection(broker::sendMessage));
-        threads.add(broker.createConnection(market::sendMessage));
+        threads.add(market.createConnection(message -> {
+            if (broker.isConnected()) {
+                broker.sendMessage(message);
+            } else {
+                market.sendMessage("Not connected".getBytes());
+            }
+        }));
+        threads.add(broker.createConnection(message -> {
+            if (market.isConnected()) {
+                market.sendMessage(message);
+            } else {
+                broker.sendMessage("Not connected".getBytes());
+            }
+        }));
         threads.forEach(thread -> {
                     try {
                         thread.join();
