@@ -1,39 +1,14 @@
 package com.nalexand.router;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.nalexand.fx_utils.FXMessage;
 
 public class FXRouter {
 
     public static final boolean DEBUG = true;
 
-    public static final SocketDelegate market = new SocketDelegate(5000);
-    public static final SocketDelegate broker = new SocketDelegate(5001);
-
     public static void main(String[] args) {
-        List<Thread> threads = new ArrayList<>();
-        threads.add(market.createConnection(message -> {
-            if (broker.isConnected()) {
-                broker.sendMessage(message);
-            } else {
-                market.sendMessage("Not connected".getBytes());
-            }
-        }));
-        threads.add(broker.createConnection(message -> {
-            if (market.isConnected()) {
-                market.sendMessage(message);
-            } else {
-                broker.sendMessage("Not connected".getBytes());
-            }
-        }));
-        threads.forEach(thread -> {
-                    try {
-                        thread.join();
-                    } catch (InterruptedException e) {
-                        handleError(e);
-                    }
-                }
-        );
+        FXServer marketServer = new FXServer(5000, fxMessage -> onMessageReceived(5000, fxMessage));
+        FXServer brokerSever = new FXServer(5001, fxMessage -> onMessageReceived(5001, fxMessage));
     }
 
     public static void handleError(Exception e) {
@@ -42,5 +17,9 @@ public class FXRouter {
             e.printStackTrace();
         }
         System.exit(1);
+    }
+
+    public static void onMessageReceived(int port, FXMessage fxMessage) {
+        System.out.format("FXRouter: Received message %d: %s\n", port, fxMessage);
     }
 }

@@ -1,10 +1,14 @@
 package com.nalexand.router;
 
+import com.nalexand.fx_utils.FXMessage;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public class SocketDelegate {
@@ -17,9 +21,10 @@ public class SocketDelegate {
 
     private OutputStream outputStream = null;
 
-    public SocketDelegate(int port) {
+    public SocketDelegate(int port, Consumer<FXMessage> messageReceived) throws IOException {
         this.port = port;
-        serverSocket = openSocket(port);
+        serverSocket = new ServerSocket(port);
+        createConnection(messageReceived);
     }
 
     public boolean isConnected() {
@@ -33,7 +38,7 @@ public class SocketDelegate {
         }
     }
 
-    public Thread createConnection(Consumer<byte[]> onMessageReceived) {
+    public void createConnection(Consumer<FXMessage> onMessageReceived) {
         Thread thread = new Thread(() -> {
             while (true) {
                 try {
@@ -44,20 +49,19 @@ public class SocketDelegate {
                     byte[] bytes = new byte[64];
                     int readCount;
                     while ((readCount = inputStream.read(bytes)) > 0) {
-                        System.out.printf("%d: read %d bytes\n", port, readCount);
-                        onMessageReceived.accept(bytes);
+                        System.out.printf("%d: Read %d bytes\n", port, readCount);
+                        onMessageReceived.accept(FXMessage.fromBytes(bytes));
                     }
-                    System.out.printf("%d: drop connection\n", port);
+                    System.out.printf("%d: Drop connection\n", port);
                 } catch (IOException e) {
                     FXRouter.handleError(e);
                 }
             }
         });
         thread.start();
-        return thread;
     }
 
-    public Socket waitConnection() {
+    public void waitConnection() {
         System.out.printf("ROUTER: %d: Wait receiver connection\n", port);
         try {
             socket = serverSocket.accept();
@@ -65,7 +69,6 @@ public class SocketDelegate {
             FXRouter.handleError(e);
         }
         System.out.printf("ROUTER: %d: Receiver connected\n", port);
-        return socket;
     }
 
     public OutputStream getOutputStream() {
@@ -78,14 +81,5 @@ public class SocketDelegate {
             FXRouter.handleError(e);
         }
         return null;
-    }
-
-    private ServerSocket openSocket(int port) {
-        try {
-            return new ServerSocket(port);
-        } catch (IOException e) {
-            FXRouter.handleError(e);
-            return null;
-        }
     }
 }
