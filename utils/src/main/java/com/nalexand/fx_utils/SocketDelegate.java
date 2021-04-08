@@ -30,19 +30,23 @@ public class SocketDelegate implements Runnable {
     }
 
     public void sendMessage(FXMessage fxMessage) {
+        try {
+            socket.getOutputStream().write(fxMessage.getBytes());
+        } catch (IOException ignored) {
 
+        }
     }
 
     @Override
     public void run() {
-        byte[] bytes = new byte[64];
+        byte[] bytes = new byte[Utils.READ_BUFF_SIZE];
 
         try {
             InputStream inputStream = socket.getInputStream();
             int readCount;
             while ((readCount = inputStream.read(bytes)) > 0) {
                 System.out.printf("Read %d bytes\n", readCount);
-                onMessageReceived.accept(FXMessage.fromBytes(bytes));
+                onMessageReceived.accept(FXMessageFactory.fromBytes(bytes));
             }
             throw new IOException("Connection closed");
         } catch (IOException e) {

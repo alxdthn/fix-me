@@ -1,34 +1,38 @@
 package com.nalexand.market;
 
-import java.util.Scanner;
-import java.util.concurrent.Executors;
-import java.util.function.Consumer;
+import com.nalexand.fx_utils.FXClient;
+import com.nalexand.fx_utils.FXMessage;
 
-import com.nalexand.fx_utils.SocketClient;
+import java.util.Scanner;
 
 public class FXMarket {
 
     public static void main(String[] args) {
-        SocketClient client = new SocketClient(5000, "MARKET");
+        Market market = new Market();
+        FXClient client = new FXClient(5000, "MARKET", market);
 
         Scanner scanner = new Scanner(System.in);
-        String line = null;
-        do {
+        while (scanner.hasNext()) {
             try {
-                line = scanner.nextLine();
-                client.sendMessage(
-                        line,
-                        result -> {
-                            System.out.println(result);
-                        },
-                        error -> {
-                            System.out.println(error);
-                        }
-                );
+                String line = scanner.nextLine();
+                client.sendMessage(FXMessage.fromBytes(line.getBytes()));
             } catch (IllegalStateException e) {
                 e.printStackTrace();
                 System.exit(1);
             }
-        } while (line != null);
+        }
+    }
+
+    private static class Market implements FXClient.Listener {
+
+        @Override
+        public void onSuccess(FXMessage fxMessage) {
+
+        }
+
+        @Override
+        public void onError(FXMessage fxMessage, Throwable e) {
+
+        }
     }
 }

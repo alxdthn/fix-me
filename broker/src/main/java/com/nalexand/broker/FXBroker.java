@@ -1,30 +1,40 @@
 package com.nalexand.broker;
 
-import com.nalexand.fx_utils.SocketClient;
+import com.nalexand.fx_utils.FXClient;
+import com.nalexand.fx_utils.FXMessage;
+import com.nalexand.fx_utils.FXMessageFactory;
 
 import java.util.Scanner;
 
 public class FXBroker {
 
     public static void main(String[] args) {
-        SocketClient client = new SocketClient(5001, "BROKER");
+        Broker broker = new Broker();
+        FXClient client = new FXClient(5001, "BROKER", broker);
 
         Scanner scanner = new Scanner(System.in);
-        String line = null;
-        do {
+        while (scanner.hasNext()) {
             try {
-                line = scanner.nextLine();
-                client.sendMessage(
-                        line,
-                        result -> {
-                        },
-                        error -> {
-                        }
-                );
+                String line = scanner.nextLine();
+                client.sendMessage(FXMessageFactory.fromString(line));
             } catch (IllegalStateException e) {
                 e.printStackTrace();
                 System.exit(1);
             }
-        } while (line != null);
+        }
+    }
+
+    private static class Broker implements FXClient.Listener {
+
+
+        @Override
+        public void onSuccess(FXMessage fxMessage) {
+
+        }
+
+        @Override
+        public void onError(FXMessage fxMessage, Throwable e) {
+
+        }
     }
 }

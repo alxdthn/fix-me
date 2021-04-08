@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -42,17 +43,23 @@ public class FXClient {
 
         logMessage(String.format("Create client %s:%d", host, port));
         Thread clientThread = new Thread(() -> {
-            byte[] bytes = new byte[64];
+            byte[] bytes = new byte[Utils.READ_BUFF_SIZE];
 
             while (true) {
                 tryCreateSocket();
                 try {
                     InputStream inputStream = socket.getInputStream();
                     while (inputStream.read(bytes) > 0) {
-                        FXMessage fxMessage = FXMessage.fromBytes(bytes);
-                        logMessage(String.format("Answer is:\n%s", fxMessage));
-                        listener.onSuccess(fxMessage);
-                        messagePool.remove(fxMessage.body.messageNum);
+                        FXMessage fxMessage = FXMessageFactory.fromBytes(bytes);
+                        logMessage(String.format("Received message:\n%s", fxMessage));
+                        if (fxMessage.error != null) {
+                            listener.onError(fxMessage, new RuntimeException(fxMessage.error));
+                        } else {
+                            if (fxMessage.body.messageNum != null) {
+                                messagePool.remove(fxMessage.body.messageNum);
+                            }
+                            listener.onSuccess(fxMessage);
+                        }
                     }
                     throw new IOException("No connection");
                 } catch (IOException ignored) {
@@ -64,6 +71,9 @@ public class FXClient {
     }
 
     public void sendMessage(FXMessage fxMessage) {
+        if (fxMessage.error != null) {
+            logMessage("Can't sand message: %s", fxMessage.error);
+        }
         executorService.execute(
                 () -> {
                     logMessage("Execute new message on thread: " + Thread.currentThread().getName());
@@ -92,9 +102,11 @@ public class FXClient {
         listener.onError(fxMessage, error);
     }
 
-    private void logMessage(String message) {
+    private void logMessage(String message, Object... args) {
+
         if (logName != null) {
-            System.out.printf("%s: %s\n", logName, message);
+            Object[] nextArgs = Arrays.stream(args).toArray();
+            System.out.printf("%s: %s\n", logName, String.format(message, nextArgs));
         }
     }
 

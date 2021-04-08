@@ -3,6 +3,7 @@ package com.nalexand.fx_utils;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -59,6 +60,12 @@ public class FXServer implements Runnable {
                 });
 
                 connectedSockets.put(newId, socketDelegate);
+                socketDelegate.sendMessage(
+                        FXMessageFactory.createLogon(
+                                Integer.toString(newId),
+                                LocalDateTime.now()
+                        )
+                );
                 logMessage("Socket started");
             } catch (IOException ignored) {
 
