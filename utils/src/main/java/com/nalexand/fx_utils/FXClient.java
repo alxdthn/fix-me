@@ -6,14 +6,12 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Consumer;
 
-public class SocketClient {
+public class FXClient {
 
     public static final int CONNECTION_RETRY_TIMEOUT = 3000;
 
@@ -27,13 +25,14 @@ public class SocketClient {
 
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
-    private int idCount = 0;
+    private final Map<String, FXMessage> messagePool = new Hashtable<>();
 
-    private final Map<Integer, FXMessageHandler> messagePool = new Hashtable<>();
+    private final Listener listener;
 
-    public SocketClient(int port, String logName) {
+    public FXClient(int port, String logName, Listener listener) {
         this.logName = logName;
         this.port = port;
+        this.listener = listener;
         try {
             this.host = InetAddress.getLocalHost().getHostName();
         } catch (UnknownHostException e) {
@@ -51,13 +50,9 @@ public class SocketClient {
                     InputStream inputStream = socket.getInputStream();
                     while (inputStream.read(bytes) > 0) {
                         FXMessage fxMessage = FXMessage.fromBytes(bytes);
-                        logMessage(String.format("Answer is \"%s\"", fxMessage));
-                        messagePool
-                                .get(fxMessage.id)
-                                .successHandler
-                                .accept(fxMessage.message);
-                        messagePool
-                                .remove(fxMessage.id);
+                        logMessage(String.format("Answer is:\n%s", fxMessage));
+                        listener.onSuccess(fxMessage);
+                        messagePool.remove(fxMessage.body.messageNum);
                     }
                     throw new IOException("No connection");
                 } catch (IOException ignored) {
@@ -68,42 +63,33 @@ public class SocketClient {
         clientThread.start();
     }
 
-    public void sendMessage(
-            String message,
-            Consumer<String> successHandler,
-            Consumer<Throwable> errorHandler
-    ) {
-        FXMessage fXMessage = new FXMessage(
-                ++idCount,
-                message
-        );
+    public void sendMessage(FXMessage fxMessage) {
         executorService.execute(
                 () -> {
                     logMessage("Execute new message on thread: " + Thread.currentThread().getName());
+                    messagePool.put(fxMessage.body.messageNum, fxMessage);
+
                     try {
                         if (socket == null || !socket.isConnected()) {
-                            logMessage("No connection");
-                            return;
+                            throw new IOException("No connection");
                         }
 
-                        logMessage(String.format("Write message %s", message));
+                        logMessage(String.format("Write message %s", fxMessage));
                         OutputStream outputStream = socket.getOutputStream();
 
-                        outputStream.write(fXMessage.getBytes());
-                        messagePool.put(fXMessage.id, new FXMessageHandler(successHandler, errorHandler));
+                        outputStream.write(fxMessage.getBytes());
                     } catch (IOException e) {
-                        notifyErrorHandler(errorHandler, e);
+                        messagePool.remove(fxMessage.body.messageNum);
+                        notifyErrorHandler(fxMessage, e);
                     }
                 }
         );
     }
 
-    private void notifyErrorHandler(Consumer<Throwable> errorHandler, Throwable error) {
+    private void notifyErrorHandler(FXMessage fxMessage, Throwable error) {
         error.printStackTrace();
         logMessage(String.format("Error: %s", error.getMessage()));
-        if (errorHandler != null) {
-            errorHandler.accept(error);
-        }
+        listener.onError(fxMessage, error);
     }
 
     private void logMessage(String message) {
@@ -134,15 +120,9 @@ public class SocketClient {
         }
     }
 
-    private static class FXMessageHandler {
+    public interface Listener {
 
-        Consumer<String> successHandler;
-
-        Consumer<Throwable> errorHandler;
-
-        public FXMessageHandler(Consumer<String> successHandler, Consumer<Throwable> errorHandler) {
-            this.successHandler = successHandler;
-            this.errorHandler = errorHandler;
-        }
+        void onSuccess(FXMessage fxMessage);
+        void onError(FXMessage fxMessage, Throwable e);
     }
 }
