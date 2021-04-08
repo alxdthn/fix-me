@@ -14,26 +14,25 @@ public class FXMessageFactory {
     private static final Pattern partValidationRegex = Pattern.compile("\\d+=[A-Za-z.:\\-0-9]+");
 
     public static FXMessage createRequest(
-            int messageNum,
+            int msgSeqNum,
             LocalDateTime currentTime,
-            String transactionType,
+            String side,
             String assignedId,
             String market,
             String ticker,
-            String quantity,
+            String orderQty,
             String price
     ) {
-        FXMessage.Body body = new FXMessage.Body(
-                assignedId,
-                Integer.toString(messageNum),
-                MSG_TYPE_NEW_REQUEST,
-                dateTimeFormatter.format(currentTime),
-                transactionType,
-                market,
-                ticker,
-                quantity,
-                price
-        );
+        FXMessage.Body body = new FXMessage.Body();
+        body.senderId = assignedId;
+        body.msgSeqNum = Integer.toString(msgSeqNum);
+        body.msgType = MSG_TYPE_NEW_ORDER_SINGLE;
+        body.sendTime = dateTimeFormatter.format(currentTime);
+        body.side = side;
+        body.targetId = market;
+        body.ticker = ticker;
+        body.orderQty = orderQty;
+        body.price = price;
         FXMessage.Header header = new FXMessage.Header(body);
         FXMessage result = new FXMessage(header, body);
         calculateSum(result);
@@ -44,17 +43,11 @@ public class FXMessageFactory {
             String assignedId,
             LocalDateTime currentTime
     ) {
-        FXMessage.Body body = new FXMessage.Body(
-                assignedId,
-                null,
-                MSG_TYPE_LOGON,
-                dateTimeFormatter.format(currentTime),
-                null,
-                null,
-                null,
-                null,
-                null
-        );
+        FXMessage.Body body = new FXMessage.Body();
+        body.senderId = assignedId;
+        body.msgType = MSG_TYPE_LOGON;
+        body.sendTime = dateTimeFormatter.format(currentTime);
+
         FXMessage.Header header = new FXMessage.Header(body);
         FXMessage result = new FXMessage(header, body);
         calculateSum(result);
@@ -110,23 +103,23 @@ public class FXMessageFactory {
                         ));
                     }
                     break;
-                case FXMessage.FieldKey.SUM:
-                    body.sum = fieldValue;
+                case FXMessage.FieldKey.CHECK_SUM:
+                    body.checkSum = fieldValue;
                     break;
-                case FXMessage.FieldKey.MSG_NUM:
-                    body.messageNum = fieldValue;
+                case FXMessage.FieldKey.MSG_SEQ_NUM:
+                    body.msgSeqNum = fieldValue;
                     break;
                 case FXMessage.FieldKey.MSG_TYPE:
-                    body.messageType = fieldValue;
+                    body.msgType = fieldValue;
                     break;
-                case FXMessage.FieldKey.QUANTITY:
-                    body.quantity = fieldValue;
+                case FXMessage.FieldKey.ORDER_QTY:
+                    body.orderQty = fieldValue;
                     break;
                 case FXMessage.FieldKey.PRICE:
                     body.price = fieldValue;
                     break;
                 case FXMessage.FieldKey.SENDER_ID:
-                    body.assignedId = fieldValue;
+                    body.senderId = fieldValue;
                     break;
                 case FXMessage.FieldKey.SEND_TIME:
                     try {
@@ -138,23 +131,23 @@ public class FXMessageFactory {
                     }
                     body.sendTime = fieldValue;
                     break;
-                case FXMessage.FieldKey.TRANSACTION_TYPE:
-                    body.transactionType = fieldValue;
+                case FXMessage.FieldKey.SIDE:
+                    body.side = fieldValue;
                     break;
                 case FXMessage.FieldKey.TICKER:
                     body.ticker = fieldValue;
                     break;
-                case FXMessage.FieldKey.MARKET:
-                    body.market = fieldValue;
+                case FXMessage.FieldKey.TARGET_ID:
+                    body.targetId = fieldValue;
                     break;
             }
             partCounter++;
         }
         if (!listOfNotNull(
                 MSG_TYPE_LOGON,
-                MSG_TYPE_NEW_REQUEST
-        ).contains(body.messageType)) return new FXMessage(String.format(
-                "Bad message type: %s", body.messageType
+                MSG_TYPE_NEW_ORDER_SINGLE
+        ).contains(body.msgType)) return new FXMessage(String.format(
+                "Bad message type: %s", body.msgType
         ));
         return new FXMessage(header, body);
     }
@@ -166,6 +159,6 @@ public class FXMessageFactory {
         for (char character : message.toCharArray()) {
             sum += character;
         }
-        result.body.sum = Integer.toString(sum % 256);
+        result.body.checkSum = Integer.toString(sum % 256);
     }
 }

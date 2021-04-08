@@ -16,7 +16,8 @@ public class FXBroker {
         while (scanner.hasNext()) {
             try {
                 String line = scanner.nextLine();
-                client.sendMessage(FXMessageFactory.fromString(line));
+                String message = line.replace("|", "\u0001");
+                client.sendMessage(FXMessageFactory.fromString(message));
             } catch (IllegalStateException e) {
                 e.printStackTrace();
                 System.exit(1);

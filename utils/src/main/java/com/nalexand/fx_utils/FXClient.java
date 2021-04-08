@@ -7,8 +7,6 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.Hashtable;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -26,9 +24,9 @@ public class FXClient {
 
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
-    private final Map<String, FXMessage> messagePool = new Hashtable<>();
-
     private final Listener listener;
+
+    private String assignedId = null;
 
     public FXClient(int port, String logName, Listener listener) {
         this.logName = logName;
@@ -42,31 +40,7 @@ public class FXClient {
         }
 
         logMessage(String.format("Create client %s:%d", host, port));
-        Thread clientThread = new Thread(() -> {
-            byte[] bytes = new byte[Utils.READ_BUFF_SIZE];
-
-            while (true) {
-                tryCreateSocket();
-                try {
-                    InputStream inputStream = socket.getInputStream();
-                    while (inputStream.read(bytes) > 0) {
-                        FXMessage fxMessage = FXMessageFactory.fromBytes(bytes);
-                        logMessage(String.format("Received message:\n%s", fxMessage));
-                        if (fxMessage.error != null) {
-                            listener.onError(fxMessage, new RuntimeException(fxMessage.error));
-                        } else {
-                            if (fxMessage.body.messageNum != null) {
-                                messagePool.remove(fxMessage.body.messageNum);
-                            }
-                            listener.onSuccess(fxMessage);
-                        }
-                    }
-                    throw new IOException("No connection");
-                } catch (IOException ignored) {
-                    messagePool.clear();
-                }
-            }
-        });
+        Thread clientThread = new Thread(this::readMessages);
         clientThread.start();
     }
 
@@ -77,7 +51,6 @@ public class FXClient {
         executorService.execute(
                 () -> {
                     logMessage("Execute new message on thread: " + Thread.currentThread().getName());
-                    messagePool.put(fxMessage.body.messageNum, fxMessage);
 
                     try {
                         if (socket == null || !socket.isConnected()) {
@@ -87,13 +60,48 @@ public class FXClient {
                         logMessage(String.format("Write message %s", fxMessage));
                         OutputStream outputStream = socket.getOutputStream();
 
+                        fxMessage.body.senderId = assignedId;
                         outputStream.write(fxMessage.getBytes());
                     } catch (IOException e) {
-                        messagePool.remove(fxMessage.body.messageNum);
                         notifyErrorHandler(fxMessage, e);
                     }
                 }
         );
+    }
+
+    private void readMessages() {
+        byte[] bytes = new byte[Utils.READ_BUFF_SIZE];
+
+        while (true) {
+            tryCreateSocket();
+            try {
+                InputStream inputStream = socket.getInputStream();
+                while (inputStream.read(bytes) > 0) {
+                    FXMessage fxMessage = FXMessageFactory.fromBytes(bytes);
+                    logMessage(String.format("Received message:\n%s", fxMessage));
+                    if (fxMessage.error != null) {
+                        listener.onError(fxMessage, new FXBadMessageException(fxMessage.error));
+                    } else {
+                        readMessage(fxMessage);
+                        listener.onSuccess(fxMessage);
+                    }
+                }
+                throw new IOException("No connection");
+            } catch (IOException ignored) {
+                assignedId = null;
+            }
+        }
+    }
+
+    private void readMessage(FXMessage fxMessage) throws FXBadMessageException {
+        try {
+            if (fxMessage.body.msgType.equals(FXMessage.MSG_TYPE_LOGON)) {
+                assignedId = fxMessage.body.senderId;
+                logMessage("Assigned id: %s", assignedId);
+            }
+        } catch (NullPointerException e) {
+            throw new FXBadMessageException(String.format("Bad message: %s", fxMessage));
+        }
     }
 
     private void notifyErrorHandler(FXMessage fxMessage, Throwable error) {
@@ -130,6 +138,11 @@ public class FXClient {
             interruptedException.printStackTrace();
             System.exit(1);
         }
+    }
+
+    public static class FXBadMessageException extends IOException {
+
+        public FXBadMessageException(String message) { super(message); }
     }
 
     public interface Listener {

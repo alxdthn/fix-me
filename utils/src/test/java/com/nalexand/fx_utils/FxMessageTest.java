@@ -16,22 +16,22 @@ public class FxMessageTest {
         String expected = "8=FIX.4.4|9=82|35=D|34=1|49=123456|56=CME|52=19931016-23:42:12.111|54=1|55=TSLA|38=42|44=1000.00|10=171"
                 .replace("|", "\u0001");
 
-        int messageNum = 1;
-        String assignedId = "123456";
-        String transactionType = FXMessage.TRANSACTION_TYPE_BUY;
+        int msgSeqNum = 1;
+        String senderId = "123456";
+        String side = FXMessage.SIDE_BUY;
         String ticker = "TSLA";
-        String market = "CME";
-        String quantity = "42";
+        String targetId = "CME";
+        String orderQty = "42";
         String price = "1000.00";
 
         FXMessage fxMessage = FXMessageFactory.createRequest(
-                messageNum,
+                msgSeqNum,
                 time,
-                transactionType,
-                assignedId,
-                market,
+                side,
+                senderId,
+                targetId,
                 ticker,
-                quantity,
+                orderQty,
                 price
         );
 
@@ -46,10 +46,10 @@ public class FxMessageTest {
         String expected = "8=FIX.4.4|9=40|35=A|49=123456|52=19931016-23:42:12.111|10=150"
                 .replace("|", "\u0001");
 
-        String assignedId = "123456";
+        String senderId = "123456";
 
         FXMessage fxMessage = FXMessageFactory.createLogon(
-                assignedId,
+                senderId,
                 time
         );
         FXMessage fxMessageFromBytes = FXMessageFactory.fromBytes(expected.getBytes());
