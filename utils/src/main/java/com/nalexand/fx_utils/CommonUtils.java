@@ -14,4 +14,14 @@ public class CommonUtils {
         }
         return result;
     }
+
+    public static List<String> listOf(String... items) {
+        List<String> result = new ArrayList<>();
+        for (String item : items) {
+            if (item != null) {
+                result.add(item);
+            }
+        }
+        return result;
+    }
 }

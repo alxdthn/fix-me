@@ -1,8 +1,8 @@
 package com.nalexand.broker;
 
 import com.nalexand.fx_utils.FXClient;
-import com.nalexand.fx_utils.FXMessage;
-import com.nalexand.fx_utils.FXMessageFactory;
+import com.nalexand.fx_utils.message.FXMessage;
+import com.nalexand.fx_utils.message.FXMessageFactory;
 
 import java.util.Scanner;
 
@@ -16,8 +16,20 @@ public class FXBroker {
         while (scanner.hasNext()) {
             try {
                 String line = scanner.nextLine();
-                String message = line.replace("|", "\u0001");
-                client.sendMessage(FXMessageFactory.fromString(message));
+                if (line.startsWith("8=" + FXMessage.PROTOCOL_VERSION)) {
+                    String message = line.replace("|", "\u0001");
+                    client.sendMessage(
+                            FXMessageFactory.fromString(message)
+                    );
+                } else {
+                    try {
+                        client.sendMessage(
+                                FXMessageFactory.fromInput(line)
+                        );
+                    } catch (FXClient.FXBadMessageException e) {
+                        client.logMessage(e.getMessage());
+                    }
+                }
             } catch (IllegalStateException e) {
                 e.printStackTrace();
                 System.exit(1);
@@ -29,12 +41,12 @@ public class FXBroker {
 
 
         @Override
-        public void onSuccess(FXMessage fxMessage) {
+        public void onMessageReceived(FXMessage fxMessage) {
 
         }
 
         @Override
-        public void onError(FXMessage fxMessage, Throwable e) {
+        public void onMessageSendError(FXMessage fxMessage, Throwable e) {
 
         }
     }

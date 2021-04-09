@@ -1,7 +1,7 @@
 package com.nalexand.router;
 
-import com.nalexand.fx_utils.FXMessage;
 import com.nalexand.fx_utils.FXServer;
+import com.nalexand.fx_utils.message.FXMessage;
 
 import java.io.IOException;
 import java.util.Scanner;
@@ -16,8 +16,8 @@ public class FXRouter {
 
     public static void main(String[] args) {
         try {
-            marketServer = new FXServer("MARKET", 5000, fxMessage -> onMessageReceived(5000, fxMessage));
-            brokerSever = new FXServer("BROKER", 5001, fxMessage -> onMessageReceived(5001, fxMessage));
+            marketServer = new FXServer("MARKET", 5000, FXRouter::onMessageReceivedFromMarket);
+            brokerSever = new FXServer("BROKER", 5001, FXRouter::onMessageReceivedFromBroker);
         } catch (IOException e) {
             handleError(e);
         }
@@ -36,8 +36,20 @@ public class FXRouter {
         System.exit(1);
     }
 
-    public static void onMessageReceived(int port, FXMessage fxMessage) {
-        System.out.format("FXRouter: Received message %d: %s\n", port, fxMessage);
+    public static void onMessageReceivedFromBroker(FXMessage fxMessage) {
+        System.out.format("FXRouter: Received message from broker\nmsg: %s\n", fxMessage);
+        marketServer.sendMessage(
+                Integer.parseInt(fxMessage.body.targetId),
+                fxMessage
+        );
+    }
+
+    public static void onMessageReceivedFromMarket(FXMessage fxMessage) {
+        System.out.format("FXRouter: Received message from market\nmsg: %s\n", fxMessage);
+        brokerSever.sendMessage(
+                Integer.parseInt(fxMessage.body.targetId),
+                fxMessage
+        );
     }
 
     private static void handleTerminalInput(String input) {

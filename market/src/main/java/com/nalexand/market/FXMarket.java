@@ -1,21 +1,34 @@
 package com.nalexand.market;
 
 import com.nalexand.fx_utils.FXClient;
-import com.nalexand.fx_utils.FXMessage;
+import com.nalexand.fx_utils.message.FXMessage;
+import com.nalexand.fx_utils.message.FXMessageFactory;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Hashtable;
+import java.util.Map;
 import java.util.Scanner;
 
 public class FXMarket {
 
+    private static final Map<String, MarketInstrument> marketData = new Hashtable<>();
+
     public static void main(String[] args) {
+        createMarketData();
+
         Market market = new Market();
-        FXClient client = new FXClient(5000, "MARKET", market);
 
         Scanner scanner = new Scanner(System.in);
         while (scanner.hasNext()) {
             try {
                 String line = scanner.nextLine();
-                client.sendMessage(FXMessage.fromBytes(line.getBytes()));
+                String[] lineSplit = line.split("\\s+");
+                if (lineSplit.length > 0) {
+                    logStatus((lineSplit.length > 1) ? lineSplit[1] : null);
+                }
             } catch (IllegalStateException e) {
                 e.printStackTrace();
                 System.exit(1);
@@ -23,16 +36,103 @@ public class FXMarket {
         }
     }
 
+    private static void createMarketData() {
+        addMarketInstrument("TSLA", "1000", "100.00");
+    }
+
+    private static void addMarketInstrument(String ticker, String quantity, String price) {
+        MarketInstrument marketInstrument = new MarketInstrument(
+                ticker,
+                new BigInteger(quantity),
+                new BigDecimal(price)
+        );
+        marketData.put(marketInstrument.ticker, marketInstrument);
+    }
+
+    public static void logStatus(String ticker) {
+        if (ticker == null) {
+            marketData.values().forEach(marketInstrument -> logStatus(marketInstrument.ticker));
+            return;
+        }
+        MarketInstrument marketInstrument = marketData.get(ticker);
+        if (marketInstrument == null) {
+            logMessage("No no instrument in market %s", ticker);
+            return;
+        }
+        logMessage("Status: \n%s", marketInstrument);
+    }
+
+    public static void logMessage(String message, Object... args) {
+        Object[] nexArgs = Arrays.stream(args).toArray();
+        System.out.printf("MARKET: %s\n", String.format(message, nexArgs));
+    }
+
     private static class Market implements FXClient.Listener {
 
-        @Override
-        public void onSuccess(FXMessage fxMessage) {
+        FXClient client = new FXClient(5000, "MARKET", this);
 
+        @Override
+        public void onMessageReceived(FXMessage fxMessage) {
+            try {
+                if (fxMessage.body.msgType.equals(FXMessage.MSG_TYPE_NEW_ORDER_SINGLE)) {
+                    switch (fxMessage.body.side) {
+                        case FXMessage.SIDE_BUY:
+                            executeBuy(fxMessage);
+                            break;
+                        case FXMessage.SIDE_SELL:
+                            executeSell(fxMessage);
+                            break;
+                    }
+                }
+            } catch (NullPointerException e) {
+                //  TODO bad message received
+            }
         }
 
         @Override
-        public void onError(FXMessage fxMessage, Throwable e) {
+        public void onMessageSendError(FXMessage fxMessage, Throwable e) {
 
+        }
+
+        private void executeBuy(FXMessage fxMessage) {
+
+        }
+
+        private void executeSell(FXMessage fxMessage) {
+            MarketInstrument marketInstrument = marketData.get(fxMessage.body.ticker);
+            if (marketInstrument == null) {
+                //  TODO error answer
+                logMessage("Can't execute SELL %s - no instrument in market\nmsg: %s",
+                        fxMessage.body.ticker, fxMessage);
+                return;
+            }
+            BigDecimal requestedPrice = new BigDecimal(fxMessage.body.price);
+            if (requestedPrice.compareTo(marketInstrument.price) != 0) {
+                //  TODO error answer
+                logMessage("Can't execute SELL %s - bad price %s\nmsg: %s",
+                        fxMessage.body.ticker, fxMessage.body.price, fxMessage);
+                return;
+            }
+            BigInteger requestedQuantity = new BigInteger(fxMessage.body.orderQty);
+            if (requestedQuantity.compareTo(marketInstrument.quantity) > 0) {
+                //  TODO error answer
+                logMessage("Can't execute SELL %s - to much quantity %s\nmsg: %s",
+                        fxMessage.body.orderQty, fxMessage);
+                return;
+            }
+            marketInstrument.quantity = marketInstrument.quantity.add(requestedQuantity);
+            logMessage("Executed SELL");
+            logStatus(marketInstrument.ticker);
+            FXMessage answer = FXMessageFactory.create(
+                    LocalDateTime.now(),
+                    FXMessage.SIDE_SELL,
+                    fxMessage.body.senderId,
+                    fxMessage.body.ticker,
+                    fxMessage.body.orderQty,
+                    fxMessage.body.price
+            );
+            answer.body.orderStatus = FXMessage.ORDER_STATUS_CALCULATED;
+            client.sendMessage(answer);
         }
     }
 }

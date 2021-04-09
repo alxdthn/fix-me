@@ -1,5 +1,8 @@
 package com.nalexand.fx_utils;
 
+import com.nalexand.fx_utils.message.FXMessage;
+import com.nalexand.fx_utils.message.FXMessageFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;

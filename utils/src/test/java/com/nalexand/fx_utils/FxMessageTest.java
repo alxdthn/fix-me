@@ -1,5 +1,7 @@
 package com.nalexand.fx_utils;
 
+import com.nalexand.fx_utils.message.FXMessage;
+import com.nalexand.fx_utils.message.FXMessageFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -16,19 +18,19 @@ public class FxMessageTest {
         String expected = "8=FIX.4.4|9=82|35=D|34=1|49=123456|56=CME|52=19931016-23:42:12.111|54=1|55=TSLA|38=42|44=1000.00|10=171"
                 .replace("|", "\u0001");
 
-        int msgSeqNum = 1;
         String senderId = "123456";
+        String msgSeqNum = "1";
         String side = FXMessage.SIDE_BUY;
         String ticker = "TSLA";
         String targetId = "CME";
         String orderQty = "42";
         String price = "1000.00";
 
-        FXMessage fxMessage = FXMessageFactory.createRequest(
-                msgSeqNum,
+        FXMessage fxMessage = FXMessageFactory.create(
                 time,
-                side,
                 senderId,
+                msgSeqNum,
+                side,
                 targetId,
                 ticker,
                 orderQty,
@@ -37,8 +39,8 @@ public class FxMessageTest {
 
         FXMessage fxMessageFromBytes = FXMessageFactory.fromBytes(expected.getBytes());
 
-        Assert.assertEquals(expected, fxMessage.toString());
-        Assert.assertEquals(expected, fxMessageFromBytes.toString());
+        Assert.assertEquals(expected, fxMessage.toFixString());
+        Assert.assertEquals(expected, fxMessageFromBytes.toFixString());
     }
 
     @Test
@@ -54,7 +56,7 @@ public class FxMessageTest {
         );
         FXMessage fxMessageFromBytes = FXMessageFactory.fromBytes(expected.getBytes());
 
-        Assert.assertEquals(expected, fxMessage.toString());
-        Assert.assertEquals(expected, fxMessageFromBytes.toString());
+        Assert.assertEquals(expected, fxMessage.toFixString());
+        Assert.assertEquals(expected, fxMessageFromBytes.toFixString());
     }
 }
