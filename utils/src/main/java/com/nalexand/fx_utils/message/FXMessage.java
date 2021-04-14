@@ -78,7 +78,7 @@ public class FXMessage extends FXMessagePart {
     }
 
     public void calculateSum() {
-        String fixString = header.toFixString() + FIX_DELIMITER + body.toFixString() + FIX_DELIMITER;
+        String fixString = header.toFixString() + FIX_DELIMITER + body.toFixString();
         int sum = 0;
 
         for (char character : fixString.toCharArray()) {

@@ -10,12 +10,12 @@ import java.time.Month;
 
 public class FxMessageTest {
 
-    private LocalDateTime time = LocalDateTime.of(1993, Month.OCTOBER, 16, 23, 42, 12, 111111111);
+    private final LocalDateTime time = LocalDateTime.of(1993, Month.OCTOBER, 16, 23, 42, 12, 111111111);
 
     @Test
     public void testCreateRequest() {
 
-        String expected = "8=FIX.4.4|9=82|35=D|49=123456|56=CME|52=19931016-23:42:12.111|54=1|55=TSLA|38=42|44=1000.00|10=171"
+        String expected = "8=FIX.4.4|9=77|35=D|49=123456|56=CME|52=19931016-23:42:12.111|54=1|55=TSLA|38=42|44=1000.00|10=171"
                 .replace("|", "\u0001");
 
         String senderId = "123456";

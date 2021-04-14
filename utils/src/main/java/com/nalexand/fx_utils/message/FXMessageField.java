@@ -10,7 +10,7 @@ public class FXMessageField {
     public static final Key CHECK_SUM = new Key("10", "CheckSum");
     public static final Key MSG_TYPE = new Key("35", "MsgType");
     public static final Key ORDER_QTY = new Key("38", "OrderQty");
-    public static final Key ORDER_STATUS = new Key("38", "OrderStatus");
+    public static final Key ORDER_STATUS = new Key("39", "OrderStatus");
     public static final Key PRICE = new Key("44", "Price");
     public static final Key SENDER_ID = new Key("49", "SenderId");
     public static final Key SEND_TIME = new Key("52", "SendTime");

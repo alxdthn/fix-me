@@ -60,10 +60,10 @@ public class FXClient {
                             throw new IOException("No connection");
                         }
 
-                        logMessage(String.format("Send message:\n%s", fxMessage));
                         OutputStream outputStream = socket.getOutputStream();
 
                         fxMessage.prepare(assignedId);
+                        logMessage(String.format("Send message:\n%s", fxMessage));
                         outputStream.write(fxMessage.getBytes());
                     } catch (IOException e) {
                         notifyErrorHandler(fxMessage, e);

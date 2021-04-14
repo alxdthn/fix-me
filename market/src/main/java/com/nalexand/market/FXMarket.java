@@ -94,7 +94,45 @@ public class FXMarket {
         }
 
         private void executeBuy(FXMessage fxMessage) {
-
+            MarketInstrument marketInstrument = marketData.get(fxMessage.body.getTicker());
+            if (marketInstrument == null) {
+                logMessage("Can't execute BUY %s - no instrument in market\nmsg: %s",
+                        fxMessage.body.getTicker(), fxMessage);
+                client.sendMessage(
+                        FXMessageFactory.createRejected(fxMessage)
+                );
+                return;
+            }
+            BigDecimal requestedPrice = new BigDecimal(fxMessage.body.getPrice());
+            if (requestedPrice.compareTo(marketInstrument.price) != 0) {
+                logMessage("Can't execute BUY %s - bad price %s\nmsg: %s",
+                        fxMessage.body.getTicker(), fxMessage.body.getPrice(), fxMessage);
+                client.sendMessage(
+                        FXMessageFactory.createRejected(fxMessage)
+                );
+                return;
+            }
+            BigInteger requestedQuantity = new BigInteger(fxMessage.body.getOrderQty());
+            if (requestedQuantity.compareTo(marketInstrument.quantity) > 0) {
+                logMessage("Can't execute BUY %s - to much quantity %s\nmsg: %s",
+                        fxMessage.body.getOrderQty(), fxMessage);
+                client.sendMessage(
+                        FXMessageFactory.createRejected(fxMessage)
+                );
+                return;
+            }
+            marketInstrument.quantity = marketInstrument.quantity.subtract(requestedQuantity);
+            logMessage("Executed BUY");
+            logStatus(marketInstrument.ticker);
+            FXMessage answer = FXMessageFactory.create(
+                    FXMessage.SIDE_SELL,
+                    fxMessage.body.getSenderId(),
+                    fxMessage.body.getTicker(),
+                    fxMessage.body.getOrderQty(),
+                    fxMessage.body.getPrice()
+            );
+            answer.body.setOrderStatus(FXMessage.ORDER_STATUS_CALCULATED);
+            client.sendMessage(answer);
         }
 
         private void executeSell(FXMessage fxMessage) {
@@ -117,14 +155,6 @@ public class FXMarket {
                 return;
             }
             BigInteger requestedQuantity = new BigInteger(fxMessage.body.getOrderQty());
-            if (requestedQuantity.compareTo(marketInstrument.quantity) > 0) {
-                client.sendMessage(
-                        FXMessageFactory.createRejected(fxMessage)
-                );
-                logMessage("Can't execute SELL %s - to much quantity %s\nmsg: %s",
-                        fxMessage.body.getOrderQty(), fxMessage);
-                return;
-            }
             marketInstrument.quantity = marketInstrument.quantity.add(requestedQuantity);
             logMessage("Executed SELL");
             logStatus(marketInstrument.ticker);
