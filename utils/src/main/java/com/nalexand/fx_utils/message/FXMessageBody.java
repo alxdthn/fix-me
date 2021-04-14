@@ -8,6 +8,19 @@ public class FXMessageBody extends FXMessagePart {
         super();
     }
 
+    public FXMessageBody(FXMessageBody from) {
+        super();
+        setTargetId(from.getTargetId());
+        setSenderId(from.getSenderId());
+        setMsgType(from.getMsgType());
+        setOrderQty(from.getOrderQty());
+        setOrderStatus(from.getOrderStatus());
+        setSendTime(from.getSendTime());
+        setPrice(from.getPrice());
+        setSide(from.getSide());
+        setTicker(from.getTicker());
+    }
+
     @Override
     protected void createFields() {
         addField(MSG_TYPE);

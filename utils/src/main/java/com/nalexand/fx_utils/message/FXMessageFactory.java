@@ -35,7 +35,7 @@ public class FXMessageFactory {
     }
 
     public static FXMessage createRejected(FXMessage from) {
-        FXMessage fxMessage = new FXMessage();
+        FXMessage fxMessage = new FXMessage(from);
         fxMessage.body.setTargetId(from.body.getSenderId());
         fxMessage.body.setMsgType(MSG_TYPE_REJECT);
         return fxMessage;

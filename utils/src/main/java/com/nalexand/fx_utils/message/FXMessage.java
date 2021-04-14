@@ -17,7 +17,7 @@ public class FXMessage extends FXMessagePart {
     public static final String MSG_TYPE_REJECT = "3";
     public static final String ORDER_STATUS_CALCULATED = "B";
 
-    private static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd-HH:mm:ss.SSS");
+    private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd-HH:mm:ss.SSS");
 
     public String error = null;
     public FXMessageHeader header = null;
@@ -34,10 +34,12 @@ public class FXMessage extends FXMessagePart {
         this.error = error;
     }
 
-    FXMessage(FXMessageHeader header, FXMessageBody body) {
+    FXMessage(FXMessage from) {
         super();
-        this.header = header;
-        this.body = body;
+        error = from.error;
+        header = new FXMessageHeader(from.header);
+        body = new FXMessageBody(from.body);
+        setCheckSum(from.getCheckSum());
     }
 
     @Override

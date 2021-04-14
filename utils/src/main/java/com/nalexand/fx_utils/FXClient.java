@@ -17,8 +17,6 @@ public class FXClient {
 
     public static final int CONNECTION_RETRY_TIMEOUT = 3000;
 
-    private static int msgSeqNum = 0;
-
     private final int port;
 
     private String host;
@@ -65,7 +63,7 @@ public class FXClient {
                         logMessage(String.format("Send message:\n%s", fxMessage));
                         OutputStream outputStream = socket.getOutputStream();
 
-                        fxMessage.prepare(assignedId, Integer.toString(msgSeqNum++));
+                        fxMessage.prepare(assignedId);
                         outputStream.write(fxMessage.getBytes());
                     } catch (IOException e) {
                         notifyErrorHandler(fxMessage, e);

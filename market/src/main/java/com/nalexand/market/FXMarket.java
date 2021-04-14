@@ -100,21 +100,27 @@ public class FXMarket {
         private void executeSell(FXMessage fxMessage) {
             MarketInstrument marketInstrument = marketData.get(fxMessage.body.getTicker());
             if (marketInstrument == null) {
-                //  TODO error answer
+                client.sendMessage(
+                        FXMessageFactory.createRejected(fxMessage)
+                );
                 logMessage("Can't execute SELL %s - no instrument in market\nmsg: %s",
                         fxMessage.body.getTicker(), fxMessage);
                 return;
             }
             BigDecimal requestedPrice = new BigDecimal(fxMessage.body.getPrice());
             if (requestedPrice.compareTo(marketInstrument.price) != 0) {
-                //  TODO error answer
+                client.sendMessage(
+                        FXMessageFactory.createRejected(fxMessage)
+                );
                 logMessage("Can't execute SELL %s - bad price %s\nmsg: %s",
                         fxMessage.body.getTicker(), fxMessage.body.getPrice(), fxMessage);
                 return;
             }
             BigInteger requestedQuantity = new BigInteger(fxMessage.body.getOrderQty());
             if (requestedQuantity.compareTo(marketInstrument.quantity) > 0) {
-                //  TODO error answer
+                client.sendMessage(
+                        FXMessageFactory.createRejected(fxMessage)
+                );
                 logMessage("Can't execute SELL %s - to much quantity %s\nmsg: %s",
                         fxMessage.body.getOrderQty(), fxMessage);
                 return;

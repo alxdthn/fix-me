@@ -34,9 +34,10 @@ public class SocketDelegate implements Runnable {
 
     public void sendMessage(FXMessage fxMessage) {
         try {
+            fxMessage.prepare(fxMessage.body.getSenderId());
             socket.getOutputStream().write(fxMessage.getBytes());
-        } catch (IOException ignored) {
-
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

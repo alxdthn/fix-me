@@ -11,6 +11,12 @@ public class FXMessageHeader extends FXMessagePart {
         setBeginString(PROTOCOL_VERSION);
     }
 
+    public FXMessageHeader(FXMessageHeader from) {
+        super();
+        setBeginString(from.getBeginString());
+        setBodyLength(from.getBodyLength());
+    }
+
     @Override
     protected void createFields() {
         addField(BEGIN_STRING);
