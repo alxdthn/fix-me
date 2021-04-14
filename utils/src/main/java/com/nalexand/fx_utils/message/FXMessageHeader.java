@@ -4,16 +4,11 @@ import static com.nalexand.fx_utils.message.FXMessage.PROTOCOL_VERSION;
 import static com.nalexand.fx_utils.message.FXMessageField.BEGIN_STRING;
 import static com.nalexand.fx_utils.message.FXMessageField.BODY_LENGTH;
 
-class FXMessageHeader extends FXMessagePart {
+public class FXMessageHeader extends FXMessagePart {
 
     public FXMessageHeader() {
         super();
-    }
-
-    public FXMessageHeader(FXMessageBody body) {
-        super();
         setBeginString(PROTOCOL_VERSION);
-        setBodyLength(Integer.toString(body.toFixString().length() + 1));
     }
 
     @Override

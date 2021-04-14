@@ -8,7 +8,6 @@ public class FXMessageField {
     public static final Key BEGIN_STRING = new Key("8", "BeginString");
     public static final Key BODY_LENGTH = new Key("9", "BodyLength");
     public static final Key CHECK_SUM = new Key("10", "CheckSum");
-    public static final Key MSG_SEQ_NUM = new Key("34", "MsgSeqNum");
     public static final Key MSG_TYPE = new Key("35", "MsgType");
     public static final Key ORDER_QTY = new Key("38", "OrderQty");
     public static final Key ORDER_STATUS = new Key("38", "OrderStatus");
@@ -45,7 +44,6 @@ public class FXMessageField {
         collection.put(BEGIN_STRING.key, BEGIN_STRING);
         collection.put(BODY_LENGTH.key, BODY_LENGTH);
         collection.put(CHECK_SUM.key, CHECK_SUM);
-        collection.put(MSG_SEQ_NUM.key, MSG_SEQ_NUM);
         collection.put(MSG_TYPE.key, MSG_TYPE);
         collection.put(ORDER_QTY.key, ORDER_QTY);
         collection.put(ORDER_STATUS.key, ORDER_STATUS);

@@ -51,7 +51,7 @@ public class FXClient {
 
     public void sendMessage(FXMessage fxMessage) {
         if (fxMessage.error != null) {
-            logMessage("Can't sand message: %s", fxMessage.error);
+            logMessage("Can't send message: %s", fxMessage.error);
         }
         executorService.execute(
                 () -> {
@@ -62,11 +62,10 @@ public class FXClient {
                             throw new IOException("No connection");
                         }
 
-                        logMessage(String.format("Write message %s", fxMessage));
+                        logMessage(String.format("Send message:\n%s", fxMessage));
                         OutputStream outputStream = socket.getOutputStream();
 
-                        fxMessage.body.setMsgSeqNum(Integer.toString(msgSeqNum++));
-                        fxMessage.body.setSenderId(assignedId);
+                        fxMessage.prepare(assignedId, Integer.toString(msgSeqNum++));
                         outputStream.write(fxMessage.getBytes());
                     } catch (IOException e) {
                         notifyErrorHandler(fxMessage, e);
@@ -106,7 +105,7 @@ public class FXClient {
                 logMessage("Assigned id: %s", assignedId);
             }
         } catch (NullPointerException e) {
-            throw new FXBadMessageException(String.format("Bad message: %s", fxMessage));
+            throw new FXBadMessageException(String.format("Bad message:\n%s", fxMessage));
         }
     }
 

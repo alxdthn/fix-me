@@ -2,52 +2,43 @@ package com.nalexand.fx_utils.message;
 
 import com.nalexand.fx_utils.FXClient;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.regex.Pattern;
 
 import static com.nalexand.fx_utils.message.FXMessage.*;
 
 public class FXMessageFactory {
 
-    private static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd-HH:mm:ss.SSS");
     private static final Pattern partValidationRegex = Pattern.compile("\\d+=[A-Za-z.:\\-0-9]+");
 
     public static FXMessage create(
-            LocalDateTime currentTime,
-            String senderId,
-            String msgSeqNum,
             String side,
             String targetId,
             String ticker,
             String orderQty,
             String price
     ) {
-        FXMessageBody body = new FXMessageBody();
-        body.setMsgType(MSG_TYPE_NEW_ORDER_SINGLE);
-        body.setSendTime(dateTimeFormatter.format(currentTime));
-        body.setMsgSeqNum(msgSeqNum);
-        body.setSide(side);
-        body.setSenderId(senderId);
-        body.setTargetId(targetId);
-        body.setTicker(ticker);
-        body.setOrderQty(orderQty);
-        body.setPrice(price);
-        FXMessageHeader header = new FXMessageHeader(body);
-        return new FXMessage(header, body);
+        FXMessage fxMessage = new FXMessage();
+        fxMessage.body.setMsgType(MSG_TYPE_NEW_ORDER_SINGLE);
+        fxMessage.body.setSide(side);
+        fxMessage.body.setTargetId(targetId);
+        fxMessage.body.setTicker(ticker);
+        fxMessage.body.setOrderQty(orderQty);
+        fxMessage.body.setPrice(price);
+        return fxMessage;
     }
 
-    public static FXMessage createLogon(
-            String senderId,
-            LocalDateTime currentTime
-    ) {
-        FXMessageBody body = new FXMessageBody();
-        body.setSenderId(senderId);
-        body.setMsgType(MSG_TYPE_LOGON);
-        body.setSendTime(dateTimeFormatter.format(currentTime));
+    public static FXMessage createLogon() {
+        FXMessage fxMessage = new FXMessage();
+        fxMessage.body.setMsgType(MSG_TYPE_LOGON);
 
-        FXMessageHeader header = new FXMessageHeader(body);
-        return new FXMessage(header, body);
+        return fxMessage;
+    }
+
+    public static FXMessage createRejected(FXMessage from) {
+        FXMessage fxMessage = new FXMessage();
+        fxMessage.body.setTargetId(from.body.getSenderId());
+        fxMessage.body.setMsgType(MSG_TYPE_REJECT);
+        return fxMessage;
     }
 
     public static FXMessage fromString(String message) {
@@ -77,7 +68,7 @@ public class FXMessageFactory {
         return message;
     }
 
-    public static FXMessage fromInput(int msgSeqNum, String input, String senderId) throws FXClient.FXBadMessageException {
+    public static FXMessage fromInput(String input) throws FXClient.FXBadMessageException {
         String[] inputSplit = input.split("\\s+");
         String usage = "USAGE: [market] [buy/sell] [ticker] [quantity] [price]";
         try {
@@ -94,9 +85,6 @@ public class FXMessageFactory {
             }
 
             return create(
-                    LocalDateTime.now(),
-                    senderId,
-                    Integer.toString(msgSeqNum),
                     side,
                     inputSplit[0],
                     inputSplit[2],

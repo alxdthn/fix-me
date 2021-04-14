@@ -15,11 +15,10 @@ public class FxMessageTest {
     @Test
     public void testCreateRequest() {
 
-        String expected = "8=FIX.4.4|9=82|35=D|34=1|49=123456|56=CME|52=19931016-23:42:12.111|54=1|55=TSLA|38=42|44=1000.00|10=171"
+        String expected = "8=FIX.4.4|9=82|35=D|49=123456|56=CME|52=19931016-23:42:12.111|54=1|55=TSLA|38=42|44=1000.00|10=171"
                 .replace("|", "\u0001");
 
         String senderId = "123456";
-        String msgSeqNum = "1";
         String side = FXMessage.SIDE_BUY;
         String ticker = "TSLA";
         String targetId = "CME";
@@ -27,15 +26,16 @@ public class FxMessageTest {
         String price = "1000.00";
 
         FXMessage fxMessage = FXMessageFactory.create(
-                time,
-                senderId,
-                msgSeqNum,
                 side,
                 targetId,
                 ticker,
                 orderQty,
                 price
         );
+        fxMessage.setSendTime(time);
+        fxMessage.body.setSenderId(senderId);
+        fxMessage.calculateBodyLength();
+        fxMessage.calculateSum();
 
         FXMessage fxMessageFromBytes = FXMessageFactory.fromBytes(expected.getBytes());
 
@@ -50,10 +50,12 @@ public class FxMessageTest {
 
         String senderId = "123456";
 
-        FXMessage fxMessage = FXMessageFactory.createLogon(
-                senderId,
-                time
-        );
+        FXMessage fxMessage = FXMessageFactory.createLogon();
+        fxMessage.setSendTime(time);
+        fxMessage.body.setSenderId(senderId);
+        fxMessage.calculateBodyLength();
+        fxMessage.calculateSum();
+
         FXMessage fxMessageFromBytes = FXMessageFactory.fromBytes(expected.getBytes());
 
         Assert.assertEquals(expected, fxMessage.toFixString());

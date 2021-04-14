@@ -4,14 +4,13 @@ import static com.nalexand.fx_utils.message.FXMessageField.*;
 
 public class FXMessageBody extends FXMessagePart {
 
-    FXMessageBody() {
+    public FXMessageBody() {
         super();
     }
 
     @Override
     protected void createFields() {
         addField(MSG_TYPE);
-        addField(MSG_SEQ_NUM);
         addField(SENDER_ID);
         addField(TARGET_ID);
         addField(SEND_TIME);
@@ -28,14 +27,6 @@ public class FXMessageBody extends FXMessagePart {
 
     public void setSenderId(String senderId) {
         setValue(SENDER_ID, senderId);
-    }
-
-    public String getMsgSeqNum() {
-        return getValue(MSG_SEQ_NUM);
-    }
-
-    public void setMsgSeqNum(String msgSeqNum) {
-        setValue(MSG_SEQ_NUM, msgSeqNum);
     }
 
     public String getMsgType() {

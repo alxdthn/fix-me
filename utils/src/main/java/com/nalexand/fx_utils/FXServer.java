@@ -6,7 +6,6 @@ import com.nalexand.fx_utils.message.FXMessageFactory;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,6 +14,8 @@ import java.util.function.Consumer;
 
 public class FXServer implements Runnable {
 
+    private static int id = 100000;
+
     private final Consumer<FXMessage> onMessageReceived;
 
     private final Map<Integer, SocketDelegate> connectedSockets = new HashMap<>();
@@ -22,8 +23,6 @@ public class FXServer implements Runnable {
     private final String name;
 
     private final int port;
-
-    private int id = 100000;
 
     private ServerSocket serverSocket;
 
@@ -63,12 +62,9 @@ public class FXServer implements Runnable {
                 });
 
                 connectedSockets.put(newId, socketDelegate);
-                socketDelegate.sendMessage(
-                        FXMessageFactory.createLogon(
-                                Integer.toString(newId),
-                                LocalDateTime.now()
-                        )
-                );
+                FXMessage logonMessage = FXMessageFactory.createLogon();
+                logonMessage.prepare(Integer.toString(newId));
+                sendMessage(newId, logonMessage);
                 logMessage("Socket started");
             } catch (IOException ignored) {
 

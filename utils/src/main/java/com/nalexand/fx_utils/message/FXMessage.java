@@ -1,5 +1,8 @@
 package com.nalexand.fx_utils.message;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 import static com.nalexand.fx_utils.message.FXMessageField.CHECK_SUM;
 
 public class FXMessage extends FXMessagePart {
@@ -13,6 +16,8 @@ public class FXMessage extends FXMessagePart {
     public static final String MSG_TYPE_LOGON = "A";
     public static final String MSG_TYPE_REJECT = "3";
     public static final String ORDER_STATUS_CALCULATED = "B";
+
+    private static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd-HH:mm:ss.SSS");
 
     public String error = null;
     public FXMessageHeader header = null;
@@ -33,7 +38,6 @@ public class FXMessage extends FXMessagePart {
         super();
         this.header = header;
         this.body = body;
-        calculateSum();
     }
 
     @Override
@@ -59,7 +63,7 @@ public class FXMessage extends FXMessagePart {
     }
 
     @Override
-    public String toUserString() {
+    public String toString() {
         return String.join(USER_DELIMITER,
                 header.toUserString(),
                 body.toUserString(),
@@ -71,7 +75,7 @@ public class FXMessage extends FXMessagePart {
         return toFixString().getBytes();
     }
 
-    private void calculateSum() {
+    public void calculateSum() {
         String fixString = header.toFixString() + FIX_DELIMITER + body.toFixString() + FIX_DELIMITER;
         int sum = 0;
 
@@ -79,5 +83,19 @@ public class FXMessage extends FXMessagePart {
             sum += character;
         }
         setCheckSum(Integer.toString(sum % 256));
+    }
+
+    public void calculateBodyLength() {
+        header.setBodyLength(Integer.toString(body.toFixString().length() + 1));
+    }
+
+    public void setSendTime(LocalDateTime time) {
+        body.setSendTime(dateTimeFormatter.format(time));
+    }
+
+    public void prepare(String senderId) {
+        setSendTime(LocalDateTime.now());
+        body.setSenderId(senderId);
+        calculateSum();
     }
 }

@@ -39,7 +39,7 @@ public class FXRouter {
     public static void onMessageReceivedFromBroker(FXMessage fxMessage) {
         System.out.format("FXRouter: Received message from broker\nmsg: %s\n", fxMessage);
         marketServer.sendMessage(
-                Integer.parseInt(fxMessage.body.targetId),
+                Integer.parseInt(fxMessage.body.getTargetId()),
                 fxMessage
         );
     }
@@ -47,7 +47,7 @@ public class FXRouter {
     public static void onMessageReceivedFromMarket(FXMessage fxMessage) {
         System.out.format("FXRouter: Received message from market\nmsg: %s\n", fxMessage);
         brokerSever.sendMessage(
-                Integer.parseInt(fxMessage.body.targetId),
+                Integer.parseInt(fxMessage.body.getTargetId()),
                 fxMessage
         );
     }
