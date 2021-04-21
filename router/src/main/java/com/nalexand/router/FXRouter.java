@@ -49,14 +49,14 @@ public class FXRouter {
 
     private static void routeBetween(FXServer target, FXServer sender, FXMessage fxMessage) {
         boolean isMessageSent = target.routeMessage(
-                fxMessage.body.getTargetId(),
+                fxMessage.header.getTargetId(),
                 fxMessage
         );
         if (!isMessageSent) {
             FXMessage rejectMessage = FXMessageFactory.createRejected(
                     fxMessage
             );
-            sender.sendMessage(fxMessage.body.getSenderId(), rejectMessage);
+            sender.sendMessage(fxMessage.header.getSenderId(), rejectMessage);
         }
     }
 

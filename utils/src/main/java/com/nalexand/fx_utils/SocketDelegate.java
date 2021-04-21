@@ -4,8 +4,8 @@ import com.nalexand.fx_utils.message.FXMessage;
 import com.nalexand.fx_utils.message.FXMessageFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.Socket;
+import java.util.Scanner;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
@@ -34,7 +34,8 @@ public class SocketDelegate implements Runnable {
 
     public void sendMessage(FXMessage fxMessage) {
         try {
-            socket.getOutputStream().write(fxMessage.getBytes());
+            socket.getOutputStream()
+                    .write((fxMessage.toFixString() + "\n").getBytes());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -42,14 +43,14 @@ public class SocketDelegate implements Runnable {
 
     @Override
     public void run() {
-        byte[] bytes = new byte[Utils.READ_BUFF_SIZE];
-
         try {
-            InputStream inputStream = socket.getInputStream();
-            int readCount;
-            while ((readCount = inputStream.read(bytes)) > 0) {
-                System.out.printf("Read %d bytes\n", readCount);
-                onMessageReceived.accept(FXMessageFactory.fromBytes(bytes));
+            Scanner scanner = new Scanner(socket.getInputStream());
+            while (scanner.hasNext()) {
+                byte[] nextBytes = scanner.nextLine().getBytes();
+                FXMessage fxMessage = FXMessageFactory
+                        .fromBytes(nextBytes);
+                System.out.printf("Read %d bytes\n", nextBytes.length);
+                onMessageReceived.accept(fxMessage);
             }
             throw new IOException("Connection closed");
         } catch (IOException e) {

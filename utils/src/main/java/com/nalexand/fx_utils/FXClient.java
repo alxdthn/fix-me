@@ -4,12 +4,12 @@ import com.nalexand.fx_utils.message.FXMessage;
 import com.nalexand.fx_utils.message.FXMessageFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -64,7 +64,7 @@ public class FXClient {
 
                         fxMessage.prepare(assignedId);
                         logMessage(String.format("Send message:\n%s", fxMessage));
-                        outputStream.write(fxMessage.getBytes());
+                        outputStream.write((fxMessage + "\n").getBytes());
                     } catch (IOException e) {
                         notifyErrorHandler(fxMessage, e);
                     }
@@ -73,14 +73,15 @@ public class FXClient {
     }
 
     private void readMessages() {
-        byte[] bytes = new byte[Utils.READ_BUFF_SIZE];
-
         while (true) {
             tryCreateSocket();
             try {
-                InputStream inputStream = socket.getInputStream();
-                while (inputStream.read(bytes) > 0) {
-                    FXMessage fxMessage = FXMessageFactory.fromBytes(bytes);
+                Scanner scanner = new Scanner(socket.getInputStream());
+                while (scanner.hasNext()) {
+                    FXMessage fxMessage = FXMessageFactory
+                            .fromBytes(
+                                    scanner.nextLine().getBytes()
+                            );
                     logMessage(String.format("Received message:\n%s", fxMessage));
                     if (fxMessage.error != null) {
                         listener.onMessageSendError(fxMessage, new FXBadMessageException(fxMessage.error));
@@ -145,12 +146,15 @@ public class FXClient {
 
     public static class FXBadMessageException extends IOException {
 
-        public FXBadMessageException(String message) { super(message); }
+        public FXBadMessageException(String message) {
+            super(message);
+        }
     }
 
     public interface Listener {
 
         void onMessageReceived(FXMessage fxMessage);
+
         void onMessageSendError(FXMessage fxMessage, Throwable e);
     }
 }

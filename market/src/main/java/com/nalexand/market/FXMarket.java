@@ -75,7 +75,7 @@ public class FXMarket {
         @Override
         public void onMessageReceived(FXMessage fxMessage) {
             try {
-                switch (fxMessage.body.getMsgType()) {
+                switch (fxMessage.header.getMsgType()) {
                     case FXMessage.MSG_TYPE_NEW_ORDER_SINGLE:
                         switch (fxMessage.body.getSide()) {
                             case FXMessage.SIDE_BUY:
@@ -87,7 +87,7 @@ public class FXMarket {
                         }
                         break;
                     case FXMessage.MSG_TYPE_LOGON:
-                        database.assignedId = fxMessage.body.getTargetId();
+                        database.assignedId = fxMessage.header.getTargetId();
                         logMessage("Database: assigned id %s", database.assignedId);
                         break;
                 }
@@ -134,7 +134,7 @@ public class FXMarket {
             printMarketDataInfo(marketInstrument.ticker);
             FXMessage answer = FXMessageFactory.create(
                     FXMessage.SIDE_SELL,
-                    fxMessage.body.getSenderId(),
+                    fxMessage.header.getSenderId(),
                     fxMessage.body.getTicker(),
                     fxMessage.body.getOrderQty(),
                     fxMessage.body.getPrice()
@@ -168,7 +168,7 @@ public class FXMarket {
             printMarketDataInfo(marketInstrument.ticker);
             FXMessage answer = FXMessageFactory.create(
                     FXMessage.SIDE_SELL,
-                    fxMessage.body.getSenderId(),
+                    fxMessage.header.getSenderId(),
                     fxMessage.body.getTicker(),
                     fxMessage.body.getOrderQty(),
                     fxMessage.body.getPrice()

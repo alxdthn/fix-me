@@ -70,8 +70,11 @@ public class FXMessage extends FXMessagePart {
     @Override
     public String toString() {
         return String.join(USER_DELIMITER,
+                "Header:",
                 header.toUserString(),
+                "Body:",
                 body.toUserString(),
+                "Sum:",
                 super.toUserString()
         );
     }
