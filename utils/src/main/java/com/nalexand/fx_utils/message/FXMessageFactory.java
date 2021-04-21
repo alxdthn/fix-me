@@ -18,9 +18,9 @@ public class FXMessageFactory {
             String price
     ) {
         FXMessage fxMessage = new FXMessage();
-        fxMessage.body.setMsgType(MSG_TYPE_NEW_ORDER_SINGLE);
+        fxMessage.header.setMsgType(MSG_TYPE_NEW_ORDER_SINGLE);
+        fxMessage.header.setTargetId(targetId);
         fxMessage.body.setSide(side);
-        fxMessage.body.setTargetId(targetId);
         fxMessage.body.setTicker(ticker);
         fxMessage.body.setOrderQty(orderQty);
         fxMessage.body.setPrice(price);
@@ -29,15 +29,14 @@ public class FXMessageFactory {
 
     public static FXMessage createLogon() {
         FXMessage fxMessage = new FXMessage();
-        fxMessage.body.setMsgType(MSG_TYPE_LOGON);
-
+        fxMessage.header.setMsgType(MSG_TYPE_LOGON);
         return fxMessage;
     }
 
     public static FXMessage createRejected(FXMessage from) {
         FXMessage fxMessage = new FXMessage(from);
-        fxMessage.body.setTargetId(from.body.getSenderId());
-        fxMessage.body.setMsgType(MSG_TYPE_REJECT);
+        fxMessage.header.setTargetId(from.header.getSenderId());
+        fxMessage.header.setMsgType(MSG_TYPE_REJECT);
         return fxMessage;
     }
 
@@ -52,6 +51,7 @@ public class FXMessageFactory {
         FXMessage message = new FXMessage();
 
         for (String str : split) {
+            if (str.isEmpty()) continue;
             if (!partValidationRegex.matcher(str).matches()) {
                 return new FXMessage(String.format(
                         "Bad part: %s", str

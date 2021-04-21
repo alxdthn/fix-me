@@ -98,8 +98,8 @@ public class FXClient {
 
     private void readMessage(FXMessage fxMessage) throws FXBadMessageException {
         try {
-            if (fxMessage.body.getMsgType().equals(FXMessage.MSG_TYPE_LOGON)) {
-                assignedId = fxMessage.body.getSenderId();
+            if (FXMessage.MSG_TYPE_LOGON.equals(fxMessage.header.getMsgType())) {
+                assignedId = fxMessage.header.getTargetId();
                 logMessage("Assigned id: %s", assignedId);
             }
         } catch (NullPointerException e) {

@@ -22,9 +22,11 @@ public class FXMessageField {
 
     Key key;
     String value;
+    boolean isImportantForLength;
 
-    FXMessageField(Key key) {
+    FXMessageField(Key key, boolean isImportantForLength) {
         this.key = key;
+        this.isImportantForLength = isImportantForLength;
     }
 
     String fixFormat() {

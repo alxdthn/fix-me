@@ -10,12 +10,8 @@ public class FXMessageBody extends FXMessagePart {
 
     public FXMessageBody(FXMessageBody from) {
         super();
-        setTargetId(from.getTargetId());
-        setSenderId(from.getSenderId());
-        setMsgType(from.getMsgType());
         setOrderQty(from.getOrderQty());
         setOrderStatus(from.getOrderStatus());
-        setSendTime(from.getSendTime());
         setPrice(from.getPrice());
         setSide(from.getSide());
         setTicker(from.getTicker());
@@ -23,31 +19,11 @@ public class FXMessageBody extends FXMessagePart {
 
     @Override
     protected void createFields() {
-        addField(MSG_TYPE);
-        addField(SENDER_ID);
-        addField(TARGET_ID);
-        addField(SEND_TIME);
         addField(SIDE);
         addField(ORDER_STATUS);
         addField(TICKER);
         addField(ORDER_QTY);
         addField(PRICE);
-    }
-
-    public String getSenderId() {
-        return getValue(SENDER_ID);
-    }
-
-    public void setSenderId(String senderId) {
-        setValue(SENDER_ID, senderId);
-    }
-
-    public String getMsgType() {
-        return getValue(MSG_TYPE);
-    }
-
-    public void setMsgType(String msgType) {
-        setValue(MSG_TYPE, msgType);
     }
 
     public String getSide() {
@@ -56,22 +32,6 @@ public class FXMessageBody extends FXMessagePart {
 
     public void setSide(String side) {
         setValue(SIDE, side);
-    }
-
-    public String getSendTime() {
-        return getValue(SEND_TIME);
-    }
-
-    public void setSendTime(String sendTime) {
-        setValue(SEND_TIME, sendTime);
-    }
-
-    public String getTargetId() {
-        return getValue(TARGET_ID);
-    }
-
-    public void setTargetId(String targetId) {
-        setValue(TARGET_ID, targetId);
     }
 
     public String getTicker() {

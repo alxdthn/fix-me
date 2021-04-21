@@ -26,7 +26,7 @@ public class FXMarket {
                 String line = scanner.nextLine();
                 String[] lineSplit = line.split("\\s+");
                 if (lineSplit.length > 0) {
-                    logStatus((lineSplit.length > 1) ? lineSplit[1] : null);
+                    printMarketDataInfo((lineSplit.length > 1) ? lineSplit[1] : null);
                 }
             } catch (IllegalStateException e) {
                 e.printStackTrace();
@@ -48,9 +48,9 @@ public class FXMarket {
         marketData.put(marketInstrument.ticker, marketInstrument);
     }
 
-    public static void logStatus(String ticker) {
+    public static void printMarketDataInfo(String ticker) {
         if (ticker == null) {
-            marketData.values().forEach(marketInstrument -> logStatus(marketInstrument.ticker));
+            marketData.values().forEach(marketInstrument -> printMarketDataInfo(marketInstrument.ticker));
             return;
         }
         MarketInstrument marketInstrument = marketData.get(ticker);
@@ -68,20 +68,28 @@ public class FXMarket {
 
     private static class Market implements FXClient.Listener {
 
-        FXClient client = new FXClient(5000, "MARKET", this);
+        private final FXClient client = new FXClient(5000, "MARKET", this);
+
+        private final DataBaseInteractor database = new DataBaseInteractor();
 
         @Override
         public void onMessageReceived(FXMessage fxMessage) {
             try {
-                if (fxMessage.body.getMsgType().equals(FXMessage.MSG_TYPE_NEW_ORDER_SINGLE)) {
-                    switch (fxMessage.body.getSide()) {
-                        case FXMessage.SIDE_BUY:
-                            executeBuy(fxMessage);
-                            break;
-                        case FXMessage.SIDE_SELL:
-                            executeSell(fxMessage);
-                            break;
-                    }
+                switch (fxMessage.body.getMsgType()) {
+                    case FXMessage.MSG_TYPE_NEW_ORDER_SINGLE:
+                        switch (fxMessage.body.getSide()) {
+                            case FXMessage.SIDE_BUY:
+                                executeBuy(fxMessage);
+                                break;
+                            case FXMessage.SIDE_SELL:
+                                executeSell(fxMessage);
+                                break;
+                        }
+                        break;
+                    case FXMessage.MSG_TYPE_LOGON:
+                        database.assignedId = fxMessage.body.getTargetId();
+                        logMessage("Database: assigned id %s", database.assignedId);
+                        break;
                 }
             } catch (NullPointerException e) {
                 //  TODO bad message received
@@ -98,7 +106,7 @@ public class FXMarket {
             if (marketInstrument == null) {
                 logMessage("Can't execute BUY %s - no instrument in market\nmsg: %s",
                         fxMessage.body.getTicker(), fxMessage);
-                client.sendMessage(
+                sendMessage(
                         FXMessageFactory.createRejected(fxMessage)
                 );
                 return;
@@ -107,7 +115,7 @@ public class FXMarket {
             if (requestedPrice.compareTo(marketInstrument.price) != 0) {
                 logMessage("Can't execute BUY %s - bad price %s\nmsg: %s",
                         fxMessage.body.getTicker(), fxMessage.body.getPrice(), fxMessage);
-                client.sendMessage(
+                sendMessage(
                         FXMessageFactory.createRejected(fxMessage)
                 );
                 return;
@@ -116,14 +124,14 @@ public class FXMarket {
             if (requestedQuantity.compareTo(marketInstrument.quantity) > 0) {
                 logMessage("Can't execute BUY %s - to much quantity %s\nmsg: %s",
                         fxMessage.body.getOrderQty(), fxMessage);
-                client.sendMessage(
+                sendMessage(
                         FXMessageFactory.createRejected(fxMessage)
                 );
                 return;
             }
             marketInstrument.quantity = marketInstrument.quantity.subtract(requestedQuantity);
             logMessage("Executed BUY");
-            logStatus(marketInstrument.ticker);
+            printMarketDataInfo(marketInstrument.ticker);
             FXMessage answer = FXMessageFactory.create(
                     FXMessage.SIDE_SELL,
                     fxMessage.body.getSenderId(),
@@ -132,32 +140,32 @@ public class FXMarket {
                     fxMessage.body.getPrice()
             );
             answer.body.setOrderStatus(FXMessage.ORDER_STATUS_CALCULATED);
-            client.sendMessage(answer);
+            sendMessage(answer);
         }
 
         private void executeSell(FXMessage fxMessage) {
             MarketInstrument marketInstrument = marketData.get(fxMessage.body.getTicker());
             if (marketInstrument == null) {
-                client.sendMessage(
-                        FXMessageFactory.createRejected(fxMessage)
-                );
                 logMessage("Can't execute SELL %s - no instrument in market\nmsg: %s",
                         fxMessage.body.getTicker(), fxMessage);
+                sendMessage(
+                        FXMessageFactory.createRejected(fxMessage)
+                );
                 return;
             }
             BigDecimal requestedPrice = new BigDecimal(fxMessage.body.getPrice());
             if (requestedPrice.compareTo(marketInstrument.price) != 0) {
-                client.sendMessage(
-                        FXMessageFactory.createRejected(fxMessage)
-                );
                 logMessage("Can't execute SELL %s - bad price %s\nmsg: %s",
                         fxMessage.body.getTicker(), fxMessage.body.getPrice(), fxMessage);
+                sendMessage(
+                        FXMessageFactory.createRejected(fxMessage)
+                );
                 return;
             }
             BigInteger requestedQuantity = new BigInteger(fxMessage.body.getOrderQty());
             marketInstrument.quantity = marketInstrument.quantity.add(requestedQuantity);
             logMessage("Executed SELL");
-            logStatus(marketInstrument.ticker);
+            printMarketDataInfo(marketInstrument.ticker);
             FXMessage answer = FXMessageFactory.create(
                     FXMessage.SIDE_SELL,
                     fxMessage.body.getSenderId(),
@@ -166,7 +174,12 @@ public class FXMarket {
                     fxMessage.body.getPrice()
             );
             answer.body.setOrderStatus(FXMessage.ORDER_STATUS_CALCULATED);
-            client.sendMessage(answer);
+            sendMessage(answer);
+        }
+
+        private void sendMessage(FXMessage fxMessage) {
+            database.saveTransaction(fxMessage);
+            client.sendMessage(fxMessage);
         }
     }
 }

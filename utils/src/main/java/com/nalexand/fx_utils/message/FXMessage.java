@@ -3,6 +3,7 @@ package com.nalexand.fx_utils.message;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import static com.nalexand.fx_utils.CommonUtils.listOfNotNull;
 import static com.nalexand.fx_utils.message.FXMessageField.CHECK_SUM;
 
 public class FXMessage extends FXMessagePart {
@@ -31,6 +32,8 @@ public class FXMessage extends FXMessagePart {
 
     FXMessage(String error) {
         super();
+        this.header = new FXMessageHeader();
+        this.body = new FXMessageBody();
         this.error = error;
     }
 
@@ -44,7 +47,7 @@ public class FXMessage extends FXMessagePart {
 
     @Override
     protected void createFields() {
-        addField(CHECK_SUM);
+        addLengthIgnoredField(CHECK_SUM);
     }
 
     public String getCheckSum() {
@@ -57,11 +60,11 @@ public class FXMessage extends FXMessagePart {
 
     @Override
     public String toFixString() {
-        return String.join(FIX_DELIMITER,
+        return String.join(FIX_DELIMITER, listOfNotNull(
                 header.toFixString(),
                 body.toFixString(),
                 super.toFixString()
-        );
+        )) + FIX_DELIMITER;
     }
 
     @Override
@@ -78,26 +81,38 @@ public class FXMessage extends FXMessagePart {
     }
 
     public void calculateSum() {
-        String fixString = header.toFixString() + FIX_DELIMITER + body.toFixString();
-        int sum = 0;
+        int delimiter = FIX_DELIMITER.charAt(0);
+        int sum = header.toFixString().chars().sum() + delimiter;
 
-        for (char character : fixString.toCharArray()) {
-            sum += character;
+        String bodyFixString = body.toFixString();
+        if (bodyFixString != null) {
+            sum += delimiter;
+            sum += bodyFixString.chars().sum();
         }
         setCheckSum(Integer.toString(sum % 256));
     }
 
-    public void calculateBodyLength() {
-        header.setBodyLength(Integer.toString(body.toFixString().length() + 1));
+    public void calculateMessageLength() {
+        int headerLength = header.length();
+        int bodyLength = body.length();
+
+        header.setBodyLength(
+                Integer.toString(
+                        headerLength +
+                                bodyLength +
+                                ((headerLength != 0) ? 1 : 0) +
+                                ((bodyLength != 0) ? 1 : 0)
+                )
+        );
     }
 
     public void setSendTime(LocalDateTime time) {
-        body.setSendTime(dateTimeFormatter.format(time));
+        header.setSendTime(dateTimeFormatter.format(time));
     }
 
     public void prepare(String senderId) {
         setSendTime(LocalDateTime.now());
-        body.setSenderId(senderId);
+        header.setSenderId(senderId);
         calculateSum();
     }
 }

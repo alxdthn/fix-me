@@ -45,7 +45,7 @@ public class FXServer implements Runnable {
     }
 
     public void sendMessage(String id, FXMessage fxMessage) {
-        fxMessage.body.setTargetId(id);
+        fxMessage.header.setTargetId(id);
         fxMessage.prepare(SERVER_SENDER_ID);
         connectedSockets.get(id).sendMessage(fxMessage);
     }
@@ -74,8 +74,7 @@ public class FXServer implements Runnable {
 
                 connectedSockets.put(newId, socketDelegate);
                 FXMessage logonMessage = FXMessageFactory.createLogon();
-                logonMessage.prepare(newId);
-                routeMessage(newId, logonMessage);
+                sendMessage(newId, logonMessage);
                 logMessage("Socket started");
             } catch (IOException ignored) {
 

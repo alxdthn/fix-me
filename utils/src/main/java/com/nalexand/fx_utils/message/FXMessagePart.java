@@ -19,18 +19,34 @@ abstract class FXMessagePart {
         createFields();
     }
 
+    protected int length() {
+        return ordered
+                .stream()
+                .filter(field -> field.value != null && field.isImportantForLength)
+                .map(FXMessageField::fixFormat)
+                .collect(Collectors.joining(FIX_DELIMITER))
+                .length();
+    }
+
     protected abstract void createFields();
 
     protected String toFixString() {
         return format(FIX_DELIMITER, FXMessageField::fixFormat);
     }
 
+
     protected String toUserString() {
         return format(USER_DELIMITER, FXMessageField::userFormat);
     }
 
     protected void addField(FXMessageField.Key key) {
-        FXMessageField field = new FXMessageField(key);
+        FXMessageField field = new FXMessageField(key, true);
+        fields.put(key.key, field);
+        ordered.add(field);
+    }
+
+    protected void addLengthIgnoredField(FXMessageField.Key key) {
+        FXMessageField field = new FXMessageField(key, false);
         fields.put(key.key, field);
         ordered.add(field);
     }
@@ -47,10 +63,11 @@ abstract class FXMessagePart {
     }
 
     private String format(String delimiter, Function<FXMessageField, String> mapper) {
-        return ordered
+        String result = ordered
                 .stream()
                 .filter(field -> field.value != null)
                 .map(mapper)
                 .collect(Collectors.joining(delimiter));
+        return (result.isEmpty()) ? null : result;
     }
 }
