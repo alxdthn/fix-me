@@ -64,7 +64,7 @@ public class FXClient {
 
                         fxMessage.prepare(assignedId);
                         logMessage(String.format("Send message:\n%s", fxMessage));
-                        outputStream.write((fxMessage + "\n").getBytes());
+                        outputStream.write((fxMessage.toFixString() + "\n").getBytes());
                     } catch (IOException e) {
                         notifyErrorHandler(fxMessage, e);
                     }

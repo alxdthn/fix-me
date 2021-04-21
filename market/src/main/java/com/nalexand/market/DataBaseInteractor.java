@@ -17,8 +17,8 @@ public class DataBaseInteractor {
         try {
             Connection connection = getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement
-                    ("SAVE INTO TRANSACTION_HISTORY (date, transaction) VALUES(?, ?)");
-            preparedStatement.setString(1, fxMessage.header.getSendTime());
+                    ("INSERT INTO 'transaction_history' ('market_id', 'transaction') VALUES(?,?)");
+            preparedStatement.setInt(1, Integer.parseInt(assignedId));
             preparedStatement.setString(2, fxMessage.toFixString());
             preparedStatement.executeUpdate();
         } catch (Exception e) {
@@ -30,11 +30,8 @@ public class DataBaseInteractor {
         if (connection == null) {
             try {
                 Class.forName("org.sqlite.JDBC");
-                connection = DriverManager.getConnection(String.format("jdbc:sqlite:market_%s.db", assignedId));
-                String sql = "CREATE TABLE IF NOT EXISTS TRANSACTION_HISTORY (\n"
-                        + "date string PRIMARY KEY,\n"
-                        + "transaction string\n"
-                        + ");";
+                connection = DriverManager.getConnection("jdbc:sqlite:market.db");
+                String sql = "CREATE TABLE IF NOT EXISTS 'transaction_history' ('id' INTEGER PRIMARY KEY AUTOINCREMENT, 'market_id' INTEGER, 'transaction' TEXT);";
                 Statement stmt = connection.createStatement();
                 stmt.execute(sql);
             } catch (Exception e) {
