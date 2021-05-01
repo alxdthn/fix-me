@@ -37,17 +37,17 @@ public class FXServer implements Runnable {
         Executors.defaultThreadFactory().newThread(this).start();
     }
 
-    public boolean routeMessage(String id, FXMessage fxMessage) {
-        SocketDelegate socketDelegate = connectedSockets.get(id);
+    public boolean routeMessage(String targetId, FXMessage fxMessage) {
+        SocketDelegate socketDelegate = connectedSockets.get(targetId);
         if (socketDelegate == null) return false;
         socketDelegate.sendMessage(fxMessage);
         return true;
     }
 
-    public void sendMessage(String id, FXMessage fxMessage) {
-        fxMessage.header.setTargetId(id);
+    public void sendMessage(String targetId, FXMessage fxMessage) {
+        fxMessage.header.setTargetId(targetId);
         fxMessage.prepare(SERVER_SENDER_ID);
-        connectedSockets.get(id).sendMessage(fxMessage);
+        connectedSockets.get(targetId).sendMessage(fxMessage);
     }
 
     public void printStatus() {

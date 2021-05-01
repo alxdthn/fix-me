@@ -21,8 +21,8 @@ public class FXMessage extends FXMessagePart {
     private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd-HH:mm:ss.SSS");
 
     public String error = null;
-    public FXMessageHeader header = null;
-    public FXMessageBody body = null;
+    public FXMessageHeader header;
+    public FXMessageBody body;
 
     FXMessage() {
         super();
