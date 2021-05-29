@@ -2,9 +2,7 @@ package com.nalexand.market;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.Queue;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.nalexand.fx_utils.CommonUtils.listOfNotNull;
@@ -13,16 +11,15 @@ public class MarketInstrument {
 
     String ticker;
 
-    private Queue<InstrumentPosition> buyPositions = new ArrayDeque<>();
+    private final List<InstrumentPosition> buyPositions = new ArrayList<>();
 
-    private Queue<InstrumentPosition> sellPositions = new ArrayDeque<>();
+    private final List<InstrumentPosition> sellPositions = new ArrayList<>();
 
     public MarketInstrument(String ticker) {
         this.ticker = ticker;
     }
 
     public void addBuyPosition(String ownerId, BigInteger quantity, BigDecimal price) {
-        
         buyPositions.add(
                 new InstrumentPosition(
                         ownerId,
@@ -40,6 +37,27 @@ public class MarketInstrument {
                         price
                 )
         );
+    }
+
+    public boolean executeBuy(BigInteger quantity, BigDecimal price) {
+        return execute(sellPositions, quantity, price);
+    }
+
+    public boolean executeSell(BigInteger quantity, BigDecimal price) {
+        return execute(buyPositions, quantity, price);
+    }
+
+    public boolean execute(List<InstrumentPosition> positions, BigInteger quantity, BigDecimal price) {
+        for (InstrumentPosition position : positions) {
+            if (position.price.compareTo(price) == 0 && position.quantity.compareTo(quantity) >= 0) {
+                position.quantity = position.quantity.subtract(quantity);
+                if (position.quantity.compareTo(BigInteger.ZERO) == 0) {
+                    sellPositions.remove(position);
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     public String format() {
